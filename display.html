@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/3.3.2/css/bootstrap.css" />
+</head>
+<body>
+  <div class="container">
+    <h1>Sentiment- Racial Discrimination</h1>
+    <canvas id="racialDescSentimentChart" width="400" height="400"></canvas>
+    <div class="row">
+      <div class="col-md-6">
+        <input type="text" class="form-control year" />
+      </div>
+      <button class="btn btn-default getData">Get Headlines From Year</button>
+    </div>
+    <div class="articles">
+
+    </div>
+  </div>
+  <script src="//cdnjs.cloudflare.com/ajax/libs/Chart.js/1.0.1/Chart.min.js"></script>
+  <script src="//cdnjs.cloudflare.com/ajax/libs/jquery/2.1.3/jquery.min.js"></script>
+  <script>
+    var dataSet, dataFromYear = [];
+    function getDataFromYear(year) {
+      console.log(dataFromYear, year, year.toString());
+      return dataFromYear[year];
+    }
+    $(".getData").click(function() {
+      var year = $(".year").val();
+      var data = getDataFromYear(year);
+      console.log(data);
+      var html = "";
+      data.forEach(function(i) {
+        html += "<strong>"+i[1].headline.main+"</strong> "+i[0].score+" <br /><small>Positive: "+i[0].positive.join(", ")+" | Negative: "+i[0].negative.join(", ")+"</small><br /><p>"+i[1].lead_paragraph+"</p><br /><br />";
+      });
+      $(".articles").html(html);
+    })
+    //Racial Discrimination
+    var RDprod = "http://localhost:8081/get/racial%20discrimination/19540101-19681231";
+    var RDdev = "http://localhost:8081/getStored/racial%20discrimination/19540101-19681231";
+    //Civil Rights
+    var CRprod = "http://localhost:8081/get/civil rights/19540101-19681231";
+    var CRdev = "http://localhost:8081/getStored/civil rights/19540101-19681231";
+    //Black Lives Matter
+    var BLprod = "http://localhost:8081/get/black lives matter/19540101-19681231";
+    var BLdev = "http://localhost:8081/getStored/black lives matter/19540101-19681231";
+    $.get(RDdev, function(data) {
+      data.sort(function(a, b) {
+        return new Date(a[1].pub_date) - new Date(b[1].pub_date);
+      });
+      dataSet = data;
+      var a = {};
+      a.labels = [];
+      a.datasets = [
+      {
+        label: "Sentiment",
+        fillColor: "rgba(220,220,220,0.2)",
+        strokeColor: "rgba(220,220,220,1)",
+        pointColor: "rgba(220,220,220,1)",
+        pointStrokeColor: "#fff",
+        pointHighlightFill: "#fff",
+        pointHighlightStroke: "rgba(220,220,220,1)",
+        data: []
+      }
+      ]
+      data.forEach(function(i) {
+        var date = new Date(i[1].pub_date);
+        var index = a.labels.indexOf(date.getFullYear());
+        if(index==-1) {
+          dataFromYear[date.getFullYear()] = [i];
+          a.labels.push(date.getFullYear());
+          a.datasets[0].data.push(i[0].score);
+        } else {
+          a.datasets[0].data[index] += i[0].score;
+          dataFromYear[date.getFullYear()].push(i);
+        }
+      });
+      var ctx = $("#racialDescSentimentChart").get(0).getContext("2d");
+      var racial = new Chart(ctx).Line({labels: a.labels, datasets: a.datasets}, {animation:false});
+    });
+  </script>
+</body>
+</html>
